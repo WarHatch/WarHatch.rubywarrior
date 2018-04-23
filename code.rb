@@ -1,6 +1,8 @@
-
 class Player
-  @move_forwards = false
+  def initialize
+    @move_forwards = false
+    @in_safety = true
+  end
   
   def needs_healing?(health)
     health < 10
@@ -19,7 +21,7 @@ class Player
   end
   
   def play_turn(warrior)
-    @in_safety = warrior.health >= @last_health 
+    @in_safety = warrior.health >= @last_health unless @last_health.nil?
     @move_forwards = false if needs_healing?(warrior.health) && !@in_safety
     
     if @in_safety && !full_health?(warrior.health)
@@ -31,8 +33,10 @@ class Player
         warrior.rescue!(:backward)
       elsif warrior.feel(:backward).wall?
         @move_forwards = true
+      else
+        walk_in_direction(warrior, true)
       end
-    elsif @move_forwards == true
+    else
       if warrior.feel.empty?
         walk_in_direction(warrior, false)
       elsif warrior.feel.captive?
