@@ -1,38 +1,47 @@
 
 class Player
-@wall_behind = nil
-
-def empty_action(warrior, backward)
-  if warrior.health < 20 && warrior.health >= @health
-      warrior.rest!
-  else
-      if backward == true
+  # actually a goal to walk forwards
+  @move_forwards = false
+  @rest_in_safety = false
+  
+  def needs_healing?(health)
+    health < 10
+  end
+  
+  def walk_in_direction(warrior, backward)
+    if backward == true
       warrior.walk!(:backward)
-      else
+    else
       warrior.walk!
+    end
+  end
+  
+  def play_turn(warrior)
+    @health = warrior.health
+      
+    if !@move_forwards
+      if warrior.feel(:backward).empty?
+        walk_in_direction(warrior, true)
+      elsif warrior.feel(:backward).captive?
+        warrior.rescue!(:backward)
+      elsif warrior.feel(:backward).wall?
+        @move_forwards = true
       end
+    elsif @move_forwards == true
+      if @in_safety && needs_healing?(warrior.health)
+        @move_forwards = false
+         warrior.rest!
+      elsif warrior.feel.empty?
+        walk_in_direction(warrior, false)
+      elsif warrior.feel.captive?
+        warrior.rescue!
+      else 
+        warrior.attack!
+      end
+    end
+  
+    @in_safety = warrior.health < @health ? false : true 
+    @move_forwards = false if needs_healing?(warrior.health) && !@in_safety
   end
 end
-
-def play_turn(warrior)
-  if !@wall_behind
-    if warrior.feel(:backward).empty?
-      empty_action(warrior, true)
-    elsif warrior.feel(:backward).captive?
-      warrior.rescue!(:backward)
-    elsif !warrior.feel(:backward).wall?
-      @wall_behind = true
-    end
-    else
-    if warrior.feel.empty?
-      empty_action(warrior, false)
-    elsif warrior.feel.captive?
-      warrior.rescue!
-    else
-      warrior.attack!
-    end
-    end
-    @health = warrior.health
-end
-
-end
+  
