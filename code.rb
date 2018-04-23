@@ -1,11 +1,13 @@
 
 class Player
-  # actually a goal to walk forwards
   @move_forwards = false
-  @rest_in_safety = false
   
   def needs_healing?(health)
     health < 10
+  end
+  
+  def full_health?(health)
+    health == 20
   end
   
   def walk_in_direction(warrior, backward)
@@ -17,9 +19,12 @@ class Player
   end
   
   def play_turn(warrior)
-    @health = warrior.health
-      
-    if !@move_forwards
+    @in_safety = warrior.health >= @last_health 
+    @move_forwards = false if needs_healing?(warrior.health) && !@in_safety
+    
+    if @in_safety && !full_health?(warrior.health)
+      warrior.rest!
+    elsif @move_forwards == false
       if warrior.feel(:backward).empty?
         walk_in_direction(warrior, true)
       elsif warrior.feel(:backward).captive?
@@ -28,10 +33,7 @@ class Player
         @move_forwards = true
       end
     elsif @move_forwards == true
-      if @in_safety && needs_healing?(warrior.health)
-        @move_forwards = false
-         warrior.rest!
-      elsif warrior.feel.empty?
+      if warrior.feel.empty?
         walk_in_direction(warrior, false)
       elsif warrior.feel.captive?
         warrior.rescue!
@@ -40,8 +42,7 @@ class Player
       end
     end
   
-    @in_safety = warrior.health < @health ? false : true 
-    @move_forwards = false if needs_healing?(warrior.health) && !@in_safety
+    @last_health = warrior.health
   end
 end
   
